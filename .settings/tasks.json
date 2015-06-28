@@ -27,7 +27,7 @@
 	"showOutput": "silent",
 	
 	// Tell the tsc compiler to use the tsconfig.json from the open folder.
-	"args": ["-t", "ES5", "global_illumination.ts"],
+	"args": ["-t", "ES5", "global_illumination.ts", "render-worker.ts", "app.ts"],
 	
 	// use the standard tsc problem matcher to find compile problems
 	// in the output.

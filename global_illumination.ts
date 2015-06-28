@@ -49,9 +49,12 @@ module GlobalIllumination {
             this.y *= div;
             return this;
         }
+
+        static ZUNIT = new Vector(0, 0, 1);
+        static YUNIT = new Vector(0, 1, 0);
     }
 
-    class Color {
+    export class Color {
 
         constructor(public r: number = 0, public g: number = 0, public b: number = 0) { }
 
@@ -84,7 +87,7 @@ module GlobalIllumination {
         public invDirection: Vector;
         public directionSquared: number;
         public sign: number[] = [];
-        constructor(public origin: Vector = new Vector, public direction: Vector = new Vector) {
+        constructor(public origin: Vector = new Vector(), public direction: Vector = new Vector()) {
             this.calcParams();
         }
 
@@ -159,10 +162,8 @@ module GlobalIllumination {
             var v = Halton.UNIFORM(17);
             var theta = Math.asin(Math.sqrt(u));
             var phi = Constant.PI * 2.0 * v;
-            var z: Vector = new Vector();
-            z.z = 1;
-            var y: Vector = new Vector();
-            y.y = 1;
+            var z: Vector = Vector.ZUNIT;
+            var y: Vector = Vector.YUNIT;
             var O: Vector = Vector.cross(N, z);
             if (Vector.mag(O) < Constant.EPSILON) {
                 O = Vector.cross(N, y);
@@ -204,8 +205,8 @@ module GlobalIllumination {
         }
 
         public nextDirection(L: Vector, N: Vector, V: Vector): BRDFSample {
-            var z = new Vector(0, 0, 1);
-            var y = new Vector(0, 1, 0);
+            var z = Vector.ZUNIT;
+            var y = Vector.YUNIT;
             var u = Halton.UNIFORM(7);
             var v = Halton.UNIFORM(11);
             var cosVR = Math.pow(u, 1.0 / (this.shine + 1));
@@ -328,7 +329,7 @@ module GlobalIllumination {
     class IntersectionResult {
         constructor(public success: boolean, public distance?: number, public point?: IntersectionPoint) { }
 
-        public static get FAILED() { return new IntersectionResult(false, 1000000); }
+        public static FAILED = new IntersectionResult(false, 1000000);
     }
 
     class IntersectionPoint {
@@ -337,10 +338,6 @@ module GlobalIllumination {
             public normal: Vector,
             public material: Material,
             public object: SceneObject) { }
-    }
-
-    class TParam {
-        constructor(public value: number) { }
     }
 
     interface SceneObject {
@@ -519,9 +516,14 @@ module GlobalIllumination {
         prob: number;
     }
 
-    class PixelSample {
+    export class PixelSample {
         public color: Color = new Color();
         public sampleCount: number = 0;
+
+        public add(pix: PixelSample) {
+            this.color = Color.plus(this.color, pix.color);
+            this.sampleCount += pix.sampleCount;
+        }
     }
 
     class Scene {
@@ -529,7 +531,7 @@ module GlobalIllumination {
         public lightSamples: number;
         public gatherWalks: number;
         public rawData: PixelSample[][] = [];
-        public imageData: number[];
+        public imageData: Color[][] = [];
         public camera: Camera = new Camera();
         public world: SceneObject[] = [];
         public lightSources: SceneObject[] = [];
@@ -541,8 +543,10 @@ module GlobalIllumination {
         constructor(height: number, width: number) {
             for (var i = 0; i < height; i++) {
                 this.rawData[i] = [];
+                this.imageData[i] = [];
                 for (var j = 0; j < width; j++) {
                     this.rawData[i][j] = new PixelSample();
+                    this.imageData[i][j] = new Color();
                 }
             }
         }
@@ -685,10 +689,6 @@ module GlobalIllumination {
             return { renderRows: false };
         }
 
-        public renderAll(): void {
-
-        }
-
         public renderFromTo(from, to) {
             for (var i = from; i < to; i++) {
                 for (var j = 0; j < this.camera.width; j++) {
@@ -698,7 +698,36 @@ module GlobalIllumination {
                     this.rawData[i][j].sampleCount++;
                 }
             }
+            console.info("Rendered:", from, to);
         }
+
+        public resetData() {
+            this.rawData.forEach((row, idx) => row.forEach((pixel, idy) => this.rawData[idx][idy] = new PixelSample()));
+        }
+
+        public processImage() {
+            this.rawData.forEach((row, rowIndex) => row.forEach((pixel, columnIndex) => {
+                var color = Color.toDrawingColor(Color.scale(1 / pixel.sampleCount, pixel.color));
+                this.imageData[rowIndex][columnIndex] = color;
+            }));
+        }
+
+        public addPartialRawData(partData: PartialRawData) {
+            for (var i = partData.from; i < partData.to; i++) {
+                this.rawData[i].forEach((pixel, idx) => pixel.add(partData.data[i - partData.from][idx]));
+            }
+        }
+
+        public getPartialRawData(from: number, to: number): PartialRawData {
+            var data = this.rawData.slice(from, to);
+            return { data: data, from: from, to: to };
+        }
+    }
+
+    export interface PartialRawData {
+        data: PixelSample[][];
+        from: number;
+        to: number;
     }
 
     interface RowsToRender {
@@ -803,15 +832,16 @@ module GlobalIllumination {
         }
     }
 
-    class Renderer {
+    export class Renderer {
         public width = 600;
         public height = 600;
-        public gatherWalk = 5;
+        public gatherWalk = 5000;
         public maxTraceDepth = 30;
         public lightSamples = 1;
         public rowsToRender = 50;
 
-        public scene: Scene = new Scene(this.height, this.width);
+        private scene: Scene = new Scene(this.height, this.width);
+        private ctx: CanvasRenderingContext2D;
 
         public initWorld() {
             var factory = new Factory();
@@ -883,40 +913,79 @@ module GlobalIllumination {
         }
 
         public renderImage(ctx: CanvasRenderingContext2D) {
+            console.info("Process Image");
+            this.scene.processImage();
+            console.info("DrawImage");
+            var imgData = ctx.createImageData(this.height, this.width);
             for (var y = 0; y < this.height; y++) {
                 for (var x = 0; x < this.width; x++) {
-                    var pixel = this.scene.rawData[x][y];
-                    var color = Color.toDrawingColor(Color.scale(1 / pixel.sampleCount, pixel.color));
-                    var fillStyle = "rgb(" + color.r + "," + color.g + "," + color.b + ")"
-                    ctx.fillStyle = fillStyle;
-                    ctx.fillRect(x, y, x + 1, y + 1);
+                    var color = this.scene.imageData[x][y];
+                    //ctx.fillStyle = "rgb(" + color.r + "," + color.g + "," + color.b + ")";;
+                    //ctx.fillRect(x, y, x + 1, y + 1);
+                    var i= y*this.width*4 + x*4;
+                    imgData.data[i + 0] = color.r;
+                    imgData.data[i + 1] = color.g;
+                    imgData.data[i + 2] = color.b;
+                    imgData.data[i + 3] = 255;
                 }
             }
+            ctx.putImageData(imgData,0,0);
+
+            console.info("Draw finished");
         }
 
-        public renderRawData() {
+        public renderRawData(ctx: CanvasRenderingContext2D) {
             do {
                 var rowsToRender = this.scene.getRowsToRender();
+                console.log(rowsToRender);
                 if (rowsToRender.renderRows) {
                     this.scene.renderFromTo(rowsToRender.from, rowsToRender.to);
                 }
-                console.info("Rendered:", rowsToRender.from, rowsToRender.to);
             } while (rowsToRender.renderRows);
         }
 
+        public renderPart(from: number, to: number): PartialRawData {
+            this.scene.resetData();
+            this.scene.renderFromTo(from, to);
+            return this.scene.getPartialRawData(from, to);
+        }
+
+        private spawnWorker(): Worker {
+            var worker = new Worker("render-worker.js");
+            worker.onmessage = ev => {
+                var data: PartialRawData = ev.data;
+                this.scene.addPartialRawData(data);
+                this.giveJobToWorker(worker);
+            };
+            return worker;
+        }
+
+        private giveJobToWorker(worker: Worker) {
+            var job = this.scene.getRowsToRender();
+            if (job.renderRows) {
+                worker.postMessage(job);
+            } else {
+                worker.terminate();
+            }
+        }
+
+        public renderWithWorkers() {
+            for (var i = 0; i < 4; i++) {
+                var worker = this.spawnWorker();
+                this.giveJobToWorker(worker);
+            }
+        }
+
         public execute() {
+            this.initWorld();
             var canv = document.createElement("canvas");
             canv.width = this.width;
             canv.height = this.height;
             document.body.appendChild(canv);
-            var ctx = canv.getContext("2d");
-            this.renderRawData();
-            this.renderImage(ctx);
+            this.ctx = canv.getContext("2d");
+            this.renderWithWorkers();
+            setInterval(() => this.renderImage(this.ctx), 2000);
         }
     }
-
-    var renderer = new Renderer();
-    renderer.initWorld();
-    renderer.execute();
 }
 

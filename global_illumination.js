@@ -79,6 +79,9 @@ var GlobalIllumination;
             this.y *= div;
             return this;
         };
+
+        Vector.ZUNIT = new Vector(0, 0, 1);
+        Vector.YUNIT = new Vector(0, 1, 0);
         return Vector;
     })();
 
@@ -127,11 +130,12 @@ var GlobalIllumination;
         Color.black = new Color(0.0, 0.0, 0.0);
         return Color;
     })();
+    GlobalIllumination.Color = Color;
 
     var Ray = (function () {
         function Ray(origin, direction) {
-            if (typeof origin === "undefined") { origin = new Vector; }
-            if (typeof direction === "undefined") { direction = new Vector; }
+            if (typeof origin === "undefined") { origin = new Vector(); }
+            if (typeof direction === "undefined") { direction = new Vector(); }
             this.origin = origin;
             this.direction = direction;
             this.sign = [];
@@ -203,10 +207,8 @@ var GlobalIllumination;
             var v = Halton.UNIFORM(17);
             var theta = Math.asin(Math.sqrt(u));
             var phi = Constant.PI * 2.0 * v;
-            var z = new Vector();
-            z.z = 1;
-            var y = new Vector();
-            y.y = 1;
+            var z = Vector.ZUNIT;
+            var y = Vector.YUNIT;
             var O = Vector.cross(N, z);
             if (Vector.mag(O) < Constant.EPSILON) {
                 O = Vector.cross(N, y);
@@ -247,8 +249,8 @@ var GlobalIllumination;
         };
 
         SpecularMaterial.prototype.nextDirection = function (L, N, V) {
-            var z = new Vector(0, 0, 1);
-            var y = new Vector(0, 1, 0);
+            var z = Vector.ZUNIT;
+            var y = Vector.YUNIT;
             var u = Halton.UNIFORM(7);
             var v = Halton.UNIFORM(11);
             var cosVR = Math.pow(u, 1.0 / (this.shine + 1));
@@ -383,13 +385,7 @@ var GlobalIllumination;
             this.distance = distance;
             this.point = point;
         }
-        Object.defineProperty(IntersectionResult, "FAILED", {
-            get: function () {
-                return new IntersectionResult(false, 1000000);
-            },
-            enumerable: true,
-            configurable: true
-        });
+        IntersectionResult.FAILED = new IntersectionResult(false, 1000000);
         return IntersectionResult;
     })();
 
@@ -401,13 +397,6 @@ var GlobalIllumination;
             this.object = object;
         }
         return IntersectionPoint;
-    })();
-
-    var TParam = (function () {
-        function TParam(value) {
-            this.value = value;
-        }
-        return TParam;
     })();
 
     var Plane = (function () {
@@ -579,12 +568,18 @@ var GlobalIllumination;
             this.color = new Color();
             this.sampleCount = 0;
         }
+        PixelSample.prototype.add = function (pix) {
+            this.color = Color.plus(this.color, pix.color);
+            this.sampleCount += pix.sampleCount;
+        };
         return PixelSample;
     })();
+    GlobalIllumination.PixelSample = PixelSample;
 
     var Scene = (function () {
         function Scene(height, width) {
             this.rawData = [];
+            this.imageData = [];
             this.camera = new Camera();
             this.world = [];
             this.lightSources = [];
@@ -592,8 +587,10 @@ var GlobalIllumination;
             this.gatherProgress = 0;
             for (var i = 0; i < height; i++) {
                 this.rawData[i] = [];
+                this.imageData[i] = [];
                 for (var j = 0; j < width; j++) {
                     this.rawData[i][j] = new PixelSample();
+                    this.imageData[i][j] = new Color();
                 }
             }
         }
@@ -742,9 +739,6 @@ var GlobalIllumination;
             return { renderRows: false };
         };
 
-        Scene.prototype.renderAll = function () {
-        };
-
         Scene.prototype.renderFromTo = function (from, to) {
             for (var i = from; i < to; i++) {
                 for (var j = 0; j < this.camera.width; j++) {
@@ -754,6 +748,39 @@ var GlobalIllumination;
                     this.rawData[i][j].sampleCount++;
                 }
             }
+            console.info("Rendered:", from, to);
+        };
+
+        Scene.prototype.resetData = function () {
+            var _this = this;
+            this.rawData.forEach(function (row, idx) {
+                return row.forEach(function (pixel, idy) {
+                    return _this.rawData[idx][idy] = new PixelSample();
+                });
+            });
+        };
+
+        Scene.prototype.processImage = function () {
+            var _this = this;
+            this.rawData.forEach(function (row, rowIndex) {
+                return row.forEach(function (pixel, columnIndex) {
+                    var color = Color.toDrawingColor(Color.scale(1 / pixel.sampleCount, pixel.color));
+                    _this.imageData[rowIndex][columnIndex] = color;
+                });
+            });
+        };
+
+        Scene.prototype.addPartialRawData = function (partData) {
+            for (var i = partData.from; i < partData.to; i++) {
+                this.rawData[i].forEach(function (pixel, idx) {
+                    return pixel.add(partData.data[i - partData.from][idx]);
+                });
+            }
+        };
+
+        Scene.prototype.getPartialRawData = function (from, to) {
+            var data = this.rawData.slice(from, to);
+            return { data: data, from: from, to: to };
         };
         return Scene;
     })();
@@ -860,7 +887,7 @@ var GlobalIllumination;
         function Renderer() {
             this.width = 600;
             this.height = 600;
-            this.gatherWalk = 5;
+            this.gatherWalk = 5000;
             this.maxTraceDepth = 30;
             this.lightSamples = 1;
             this.rowsToRender = 50;
@@ -936,40 +963,85 @@ var GlobalIllumination;
         };
 
         Renderer.prototype.renderImage = function (ctx) {
+            console.info("Process Image");
+            this.scene.processImage();
+            console.info("DrawImage");
+            var imgData = ctx.createImageData(this.height, this.width);
             for (var y = 0; y < this.height; y++) {
                 for (var x = 0; x < this.width; x++) {
-                    var pixel = this.scene.rawData[y][x];
-                    var color = Color.toDrawingColor(Color.scale(1 / pixel.sampleCount, pixel.color));
-                    var fillStyle = "rgb(" + color.r + "," + color.g + "," + color.b + ")";
-                    ctx.fillStyle = fillStyle;
-                    ctx.fillRect(x, y, x + 1, y + 1);
+                    var color = this.scene.imageData[x][y];
+
+                    //ctx.fillStyle = "rgb(" + color.r + "," + color.g + "," + color.b + ")";;
+                    //ctx.fillRect(x, y, x + 1, y + 1);
+                    var i = y * this.width * 4 + x * 4;
+                    imgData.data[i + 0] = color.r;
+                    imgData.data[i + 1] = color.g;
+                    imgData.data[i + 2] = color.b;
+                    imgData.data[i + 3] = 255;
                 }
             }
+            ctx.putImageData(imgData, 0, 0);
+
+            console.info("Draw finished");
         };
 
-        Renderer.prototype.renderRawData = function () {
+        Renderer.prototype.renderRawData = function (ctx) {
             do {
                 var rowsToRender = this.scene.getRowsToRender();
+                console.log(rowsToRender);
                 if (rowsToRender.renderRows) {
                     this.scene.renderFromTo(rowsToRender.from, rowsToRender.to);
                 }
-                console.info("Rendered:", rowsToRender.from, rowsToRender.to);
             } while(rowsToRender.renderRows);
         };
 
+        Renderer.prototype.renderPart = function (from, to) {
+            this.scene.resetData();
+            this.scene.renderFromTo(from, to);
+            return this.scene.getPartialRawData(from, to);
+        };
+
+        Renderer.prototype.spawnWorker = function () {
+            var _this = this;
+            var worker = new Worker("render-worker.js");
+            worker.onmessage = function (ev) {
+                var data = ev.data;
+                _this.scene.addPartialRawData(data);
+                _this.giveJobToWorker(worker);
+            };
+            return worker;
+        };
+
+        Renderer.prototype.giveJobToWorker = function (worker) {
+            var job = this.scene.getRowsToRender();
+            if (job.renderRows) {
+                worker.postMessage(job);
+            } else {
+                worker.terminate();
+            }
+        };
+
+        Renderer.prototype.renderWithWorkers = function () {
+            for (var i = 0; i < 4; i++) {
+                var worker = this.spawnWorker();
+                this.giveJobToWorker(worker);
+            }
+        };
+
         Renderer.prototype.execute = function () {
+            var _this = this;
+            this.initWorld();
             var canv = document.createElement("canvas");
             canv.width = this.width;
             canv.height = this.height;
             document.body.appendChild(canv);
-            var ctx = canv.getContext("2d");
-            this.renderRawData();
-            this.renderImage(ctx);
+            this.ctx = canv.getContext("2d");
+            this.renderWithWorkers();
+            setInterval(function () {
+                return _this.renderImage(_this.ctx);
+            }, 2000);
         };
         return Renderer;
     })();
-
-    var renderer = new Renderer();
-    renderer.initWorld();
-    renderer.execute();
+    GlobalIllumination.Renderer = Renderer;
 })(GlobalIllumination || (GlobalIllumination = {}));
