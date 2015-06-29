@@ -366,12 +366,14 @@ module GlobalIllumination {
 
             var hitPoint = r.getPointOnRay(temp);
 
-            if ((hitPoint.x < this.min.x) && (Math.abs(hitPoint.x - this.min.x) > Constant.EPSILON)) return IntersectionResult.FAILED;
-            if ((hitPoint.y < this.min.y) && (Math.abs(hitPoint.y - this.min.y) > Constant.EPSILON)) return IntersectionResult.FAILED;
-            if ((hitPoint.z < this.min.z) && (Math.abs(hitPoint.z - this.min.z) > Constant.EPSILON)) return IntersectionResult.FAILED;
-            if ((hitPoint.x > this.max.x) && (Math.abs(hitPoint.x - this.max.x) > Constant.EPSILON)) return IntersectionResult.FAILED;
-            if ((hitPoint.y > this.max.y) && (Math.abs(hitPoint.y - this.max.y) > Constant.EPSILON)) return IntersectionResult.FAILED;
-            if ((hitPoint.z > this.max.z) && (Math.abs(hitPoint.z - this.max.z) > Constant.EPSILON)) return IntersectionResult.FAILED;
+            var v1 = Vector.minus(hitPoint, this.min);
+            var v2 = Vector.minus(hitPoint, this.max);
+            if ((hitPoint.x < this.min.x) && (Math.abs(v1.x) > Constant.EPSILON)) return IntersectionResult.FAILED;
+            if ((hitPoint.y < this.min.y) && (Math.abs(v1.y) > Constant.EPSILON)) return IntersectionResult.FAILED;
+            if ((hitPoint.z < this.min.z) && (Math.abs(v1.z) > Constant.EPSILON)) return IntersectionResult.FAILED;
+            if ((hitPoint.x > this.max.x) && (Math.abs(v2.x) > Constant.EPSILON)) return IntersectionResult.FAILED;
+            if ((hitPoint.y > this.max.y) && (Math.abs(v2.y) > Constant.EPSILON)) return IntersectionResult.FAILED;
+            if ((hitPoint.z > this.max.z) && (Math.abs(v2.z) > Constant.EPSILON)) return IntersectionResult.FAILED;
 
             return new IntersectionResult(true, temp, new IntersectionPoint(hitPoint, this.normal, this.mat, this));
         }
@@ -401,21 +403,24 @@ module GlobalIllumination {
             return 2 * this.rad * Math.random() - this.rad;
         }
 
+        private getDiscriminant(A, B, C): number {
+            return B * B - 4 * A * C;
+        }
+
         public intersect(r: Ray): IntersectionResult {
             var A = r.directionSquared;
             var op = Vector.minus(r.origin, this.pos);
             var B = 2 * Vector.dot(r.direction, op);
             var C = Vector.dot(op, op) - this.rad * this.rad;
-            var D = B * B - 4 * A * C;
+            var D = this.getDiscriminant(A, B, C);
             if (D < 0) return IntersectionResult.FAILED;
-
-            var t1 = (-B - Math.sqrt(D)) / (2 * A);
+            var sqrtD = Math.sqrt(D);
+            var denominator = 1 / 2 * A;
+            var t1 = (-B - sqrtD) * denominator;
             var tt;
             if (t1 > 0) tt = t1;
-            else {
-                var t2 = (-B + Math.sqrt(D)) / (2 * A);
-                tt = t2;
-            }
+            else tt = (-B + sqrtD) * denominator;
+
             if (tt < Constant.EPSILON) return IntersectionResult.FAILED;
 
             var hitpoint = r.getPointOnRay(tt);
@@ -466,12 +471,10 @@ module GlobalIllumination {
             if (this.innerObjects.length === 0) return IntersectionResult.FAILED;
 
             var min: IntersectionResult;
-            this.innerObjects.forEach((object, index) => {
-                var result = object.intersect(r);
-                if (result.success) {
-                    if (min && result.distance < min.distance || !min) {
-                        min = result;
-                    }
+            var interSections = this.innerObjects.map<IntersectionResult>(object => object.intersect(r));
+            interSections.forEach(result => {
+                if (result.success && min && result.distance < min.distance) {
+                    min = result;
                 }
             });
             if (min) return min;
@@ -587,22 +590,19 @@ module GlobalIllumination {
         }
 
         private directLightSource(p: IntersectionPoint, out: Vector): Color {
-            var model = MaterialModel.ALL;
-            var shadowRay = new Ray(p.hp);
-            p.normal = Vector.norm(p.normal);
+            p.normal.normalize();
             var s: Color = new Color();
             this.lightSources.forEach((object, index) => {
                 var c: Color = new Color();
                 for (var i = 0; i < this.lightSamples; i++) {
                     var inVector = object.getRandomSurfacePoint();
-                    shadowRay.direction = Vector.norm(Vector.minus(inVector, p.hp));
-                    shadowRay.calcParams();
+                    var shadowRay = new Ray(p.hp, Vector.norm(Vector.minus(inVector, p.hp)));
                     var lightIntersect = object.intersect(shadowRay);
 
                     if (!this.shadowIntersect(shadowRay, lightIntersect.distance)) {
                         var cost = Vector.dot(p.normal, shadowRay.direction);
                         if (cost > Constant.EPSILON) {
-                            var w: Color = p.material.BRDF(shadowRay.direction, p.normal, out, model);
+                            var w: Color = p.material.BRDF(shadowRay.direction, p.normal, out, MaterialModel.ALL);
                             var le = object.mat.cLe;
                             var c = Color.plus(Color.times(Color.scale(cost, w), le), c);
                         }
@@ -633,7 +633,7 @@ module GlobalIllumination {
             var color: Color = new Color();
             if (d > this.maxTraceDepht) return color;
 
-            var out = true;
+            //var out = true;
             var firstIntersect = this.firstIntersect(ray);
             if (firstIntersect.success) {
                 var hp = firstIntersect.point;
@@ -649,7 +649,7 @@ module GlobalIllumination {
 
                 var c = this.directLightSource(hp, negDirection);
                 color = Color.plus(color, Color.legalize(c));
-                var brdfSample = this.BRDFSampling(negDirection, hp.normal, hp.material, out);
+                var brdfSample = this.BRDFSampling(negDirection, hp.normal, hp.material, true);
                 if (brdfSample.probability < Constant.EPSILON) return color;
                 var newray = new Ray(hp.hp, brdfSample.direction.normalize());
                 var cost = Vector.dot(hp.normal, newray.direction);
@@ -683,6 +683,7 @@ module GlobalIllumination {
                     this.lineProgress = this.rowsToRender;
                     from = 0;
                     to = this.rowsToRender;
+                    console.info(this.gatherProgress," / ",this.gatherWalks);
                 }
                 return { from: from, to: to, renderRows: true };
             }
@@ -698,7 +699,6 @@ module GlobalIllumination {
                     this.rawData[i][j].sampleCount++;
                 }
             }
-            console.info("Rendered:", from, to);
         }
 
         public resetData() {
@@ -833,11 +833,11 @@ module GlobalIllumination {
     }
 
     export class Renderer {
-        public width = 600;
-        public height = 600;
+        public width = 800;
+        public height = 800;
         public gatherWalk = 5000;
         public maxTraceDepth = 30;
-        public lightSamples = 1;
+        public lightSamples = 5;
         public rowsToRender = 50;
 
         private scene: Scene = new Scene(this.height, this.width);
@@ -913,25 +913,19 @@ module GlobalIllumination {
         }
 
         public renderImage(ctx: CanvasRenderingContext2D) {
-            console.info("Process Image");
             this.scene.processImage();
-            console.info("DrawImage");
             var imgData = ctx.createImageData(this.height, this.width);
             for (var y = 0; y < this.height; y++) {
                 for (var x = 0; x < this.width; x++) {
-                    var color = this.scene.imageData[x][y];
-                    //ctx.fillStyle = "rgb(" + color.r + "," + color.g + "," + color.b + ")";;
-                    //ctx.fillRect(x, y, x + 1, y + 1);
-                    var i= y*this.width*4 + x*4;
+                    var color = this.scene.imageData[this.height-y-1][x];
+                    var i = y * this.width * 4 + x * 4;
                     imgData.data[i + 0] = color.r;
                     imgData.data[i + 1] = color.g;
                     imgData.data[i + 2] = color.b;
                     imgData.data[i + 3] = 255;
                 }
             }
-            ctx.putImageData(imgData,0,0);
-
-            console.info("Draw finished");
+            ctx.putImageData(imgData, 0, 0);
         }
 
         public renderRawData(ctx: CanvasRenderingContext2D) {
