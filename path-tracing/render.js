@@ -132,4 +132,4 @@ define(["require", "exports", 'general/vector', 'general/color', 'path-tracing/m
     }
     exports.Renderer = Renderer;
 });
-//# sourceMappingURL=global_illumination.js.map
+//# sourceMappingURL=render.js.map

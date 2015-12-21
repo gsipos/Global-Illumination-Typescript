@@ -1,6 +1,5 @@
-/// <reference path="global_illumination.ts" />
-var GlobalIllumination;
-(function (GlobalIllumination) {
-    var renderer = new GlobalIllumination.Renderer();
+define(["require", "exports", 'path-tracing/render'], function (require, exports, render_1) {
+    var renderer = new render_1.default();
     renderer.execute();
-})(GlobalIllumination || (GlobalIllumination = {}));
+});
+//# sourceMappingURL=app.js.map
