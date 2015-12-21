@@ -1,4 +1,5 @@
 define(["require", "exports", 'general/vector', 'general/color', 'path-tracing/material/material', 'path-tracing/object/bounding-box', 'path-tracing/scene/scene', 'path-tracing/object/factory', 'path-tracing/object/factory'], function (require, exports, vector_1, color_1, material_1, bounding_box_1, scene_1, ObjectFactory, factory_1) {
+    "use strict";
     var Directions = ObjectFactory.Directions;
     class Renderer {
         constructor() {
@@ -132,4 +133,4 @@ define(["require", "exports", 'general/vector', 'general/color', 'path-tracing/m
     }
     exports.Renderer = Renderer;
 });
-//# sourceMappingURL=global_illumination.js.map
+//# sourceMappingURL=render.js.map
