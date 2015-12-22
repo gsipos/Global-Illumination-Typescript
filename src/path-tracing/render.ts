@@ -127,8 +127,7 @@ export default class Renderer {
     private spawnWorker(): Worker {
         var worker = new Worker("render-worker.js");
         worker.onmessage = ev => {
-            var data: SceneData.PartialRawData = ev.data;
-            this.scene.addPartialRawData(data);
+            this.jobCompleted(ev);
             this.giveJobToWorker(worker);
         };
         return worker;
@@ -141,6 +140,13 @@ export default class Renderer {
         } else {
             worker.terminate();
         }
+    }
+    
+    public getJob() { return this.scene.getRowsToRender(); }
+    
+    public jobCompleted(jobResult: MessageEvent) {
+        var data: SceneData.PartialRawData = jobResult.data;
+        this.scene.addPartialRawData(data);
     }
 
     public renderWithWorkers() {
