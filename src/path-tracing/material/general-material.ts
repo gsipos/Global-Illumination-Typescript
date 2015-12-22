@@ -1,4 +1,4 @@
-import Vector from 'general/vector';
+import Vector from '../../general/vector';
 
 export enum MaterialModel {
     DIFFUSE,

@@ -1,15 +1,15 @@
 "use strict";
-import Vector from 'general/vector';
-import Color from 'general/color';
+import Vector from '../general/vector';
+import Color from '../general/color';
 
-import Material from 'path-tracing/material/material';
-import BoundingBox from 'path-tracing/object/bounding-box';
+import Material from './material/material';
+import BoundingBox from './object/bounding-box';
 
-import Scene from 'path-tracing/scene/scene';
-import * as SceneData from 'path-tracing/scene/scene';
+import Scene from './scene/scene';
+import * as SceneData from './scene/scene';
 
-import * as ObjectFactory from 'path-tracing/object/factory';
-import Factory from 'path-tracing/object/factory';
+import * as ObjectFactory from './object/factory';
+import Factory from './object/factory';
 import Directions = ObjectFactory.Directions;
 
 export default class Renderer {

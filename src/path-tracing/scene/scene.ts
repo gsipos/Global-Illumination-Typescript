@@ -1,26 +1,26 @@
-import Vector from 'general/vector';
-import Color from 'general/color';
+import Vector from '../../general/vector';
+import Color from '../../general/color';
 
-import Ray from 'path-tracing/ray';
-import Constant from 'path-tracing/constant';
-import Halton from 'path-tracing/halton';
+import Ray from '../ray';
+import Constant from '../constant';
+import Halton from '../halton';
 
-import * as GeneralMaterial from 'path-tracing/material/general-material';
+import * as GeneralMaterial from '../material/general-material';
 import BRDFSample = GeneralMaterial.BRDFSample;
 import MaterialModel = GeneralMaterial.MaterialModel;
 
-import Material from 'path-tracing/material/material';
+import Material from '../material/material';
 
-import * as SceneObj from 'path-tracing/object/scene-object';
+import * as SceneObj from '../object/scene-object';
 import IntersectionPoint = SceneObj.Intersection.Point;
 import IntersectionResult = SceneObj.Intersection.Result;
 import SceneObject = SceneObj.SceneObject;
 
-import Plane from 'path-tracing/object/plane';
-import Sphere from 'path-tracing/object/sphere';
-import BoundingBox from 'path-tracing/object/bounding-box';
+import Plane from '../object/plane';
+import Sphere from '../object/sphere';
+import BoundingBox from '../object/bounding-box';
 
-import Camera from 'path-tracing/scene/camera';
+import Camera from './camera';
 
 interface SelectedBRDFModel {
     model: MaterialModel;

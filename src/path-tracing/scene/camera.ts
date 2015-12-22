@@ -1,6 +1,6 @@
-import Vector from 'general/vector';
-import Ray from 'path-tracing/ray';
-import Halton from 'path-tracing/halton';
+import Vector from '../../general/vector';
+import Ray from '../ray';
+import Halton from '../halton';
 
 export default class Camera {
     private dx: number;

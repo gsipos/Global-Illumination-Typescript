@@ -1,12 +1,12 @@
-import Vector from 'general/vector';
-import Color from 'general/color';
-import Ray from 'path-tracing/ray';
-import Constant from 'path-tracing/constant';
-import Halton from 'path-tracing/halton';
+import Vector from '../../general/vector';
+import Color from '../../general/color';
+import Ray from '../ray';
+import Constant from '../constant';
+import Halton from '../halton';
 
-import Material from 'path-tracing/material/material';
+import Material from '../material/material';
 
-import * as SceneObj from 'path-tracing/object/scene-object';
+import * as SceneObj from './scene-object';
 import IntersectionPoint = SceneObj.Intersection.Point;
 import IntersectionResult = SceneObj.Intersection.Result;
 import SceneObject = SceneObj.SceneObject;

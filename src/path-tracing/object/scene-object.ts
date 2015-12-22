@@ -1,9 +1,12 @@
-import Vector from 'general/vector';
-import Color from 'general/color';
+import Vector from '../../general/vector';
+import Color from '../../general/color';
+import Ray from '../ray';
+import Constant from '../constant';
+import Halton from '../halton';
 
-import Ray from 'path-tracing/ray';
+import Material from '../material/material';
 
-import Material from 'path-tracing/material/material';
+import * as SceneObj from './scene-object';
 
 export interface SceneObject {
     mat: Material;

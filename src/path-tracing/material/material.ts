@@ -1,14 +1,14 @@
-import Vector from 'general/vector';
-import Color from 'general/color';
+import Vector from '../../general/vector';
+import Color from '../../general/color';
 
-import Constant from 'path-tracing/constant';
-import * as GeneralMaterial from 'path-tracing/material/general-material';
+import Constant from '../constant';
+import * as GeneralMaterial from './general-material';
 
 import MaterialModel = GeneralMaterial.MaterialModel;
-import DiffuseMaterial from 'diffuse';
-import SpecularMaterial from 'specular';
-import IdealRefractorMaterial from 'ideal-refractor';
-import IdealReflectorMaterial from 'ideal-reflector';
+import DiffuseMaterial from './diffuse';
+import SpecularMaterial from './specular';
+import IdealRefractorMaterial from './ideal-refractor';
+import IdealReflectorMaterial from './ideal-reflector';
 
 export default class Material {
     public cLe: Color = new Color();

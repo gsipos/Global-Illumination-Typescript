@@ -1,17 +1,16 @@
-import Vector from 'general/vector';
-import Color from 'general/color';
+import Vector from '../../general/vector';
+import Color from '../../general/color';
+import Ray from '../ray';
+import Constant from '../constant';
+import Halton from '../halton';
 
-import Ray from 'path-tracing/ray';
-import Constant from 'path-tracing/constant';
+import Material from '../material/material';
 
-import Material from 'path-tracing/material/material';
+import * as SceneObj from './scene-object';
 
-import * as SceneObj from 'path-tracing/object/scene-object';
-import SceneObject = SceneObj.SceneObject;
-
-import Plane from 'path-tracing/object/plane';
-import Sphere from 'path-tracing/object/sphere';
-import BoundingBox from 'path-tracing/object/bounding-box';
+import Plane from './plane';
+import Sphere from './sphere';
+import BoundingBox from './bounding-box';
 
 export enum Directions {
     UP,

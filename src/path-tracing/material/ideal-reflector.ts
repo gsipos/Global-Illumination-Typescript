@@ -1,7 +1,7 @@
 import Vector from '../../general/vector';
 import Color from '../../general/color';
 
-import * as GeneralMaterial from 'path-tracing/material/general-material';
+import * as GeneralMaterial from './general-material';
 
 export default class IdealReflectorMaterial {
     public Kr: Color = new Color();

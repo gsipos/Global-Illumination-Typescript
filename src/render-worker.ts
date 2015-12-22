@@ -1,4 +1,4 @@
-import Renderer from 'path-tracing/render';
+import Renderer from './path-tracing/render';
 var renderer = new Renderer();
 renderer.initWorld();
 onmessage = (ev) => {

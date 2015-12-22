@@ -3,7 +3,7 @@ import Color from '../../general/color';
 import Halton from '../halton';
 import Constant from '../constant';
 
-import * as GeneralMaterial from 'path-tracing/material/general-material';
+import * as GeneralMaterial from './general-material';
 import BRDFSample = GeneralMaterial.BRDFSample;
 import MaterialModel = GeneralMaterial.MaterialModel;
 
