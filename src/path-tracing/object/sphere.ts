@@ -1,3 +1,4 @@
+"use strict";
 import Vector from '../../general/vector';
 import Color from '../../general/color';
 import Ray from '../ray';

@@ -2,7 +2,7 @@
   "name": "global-illumination-typescript",
   "version": "1.0.0",
   "description": "Global Illumination with Quasi-Monte Carlo path tracing",
-  "main": "app.js",
+  "main": "src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

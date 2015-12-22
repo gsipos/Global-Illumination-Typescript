@@ -1,3 +1,4 @@
+"use strict";
 import Vector from '../general/vector';
 
 export default class Ray {

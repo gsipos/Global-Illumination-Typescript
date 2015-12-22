@@ -1,3 +1,4 @@
+"use strict";
 (function (MaterialModel) {
     MaterialModel[MaterialModel["DIFFUSE"] = 0] = "DIFFUSE";
     MaterialModel[MaterialModel["SPECULAR"] = 1] = "SPECULAR";

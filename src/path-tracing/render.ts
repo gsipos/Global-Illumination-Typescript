@@ -123,24 +123,6 @@ export default class Renderer {
         this.scene.renderFromTo(from, to);
         return this.scene.getPartialRawData(from, to);
     }
-
-    private spawnWorker(): Worker {
-        var worker = new Worker("render-worker.js");
-        worker.onmessage = ev => {
-            this.jobCompleted(ev);
-            this.giveJobToWorker(worker);
-        };
-        return worker;
-    }
-
-    private giveJobToWorker(worker: Worker) {
-        var job = this.scene.getRowsToRender();
-        if (job.renderRows) {
-            worker.postMessage(job);
-        } else {
-            worker.terminate();
-        }
-    }
     
     public getJob() { return this.scene.getRowsToRender(); }
     
@@ -149,12 +131,6 @@ export default class Renderer {
         this.scene.addPartialRawData(data);
     }
 
-    public renderWithWorkers() {
-        for (var i = 0; i < 4; i++) {
-            var worker = this.spawnWorker();
-            this.giveJobToWorker(worker);
-        }
-    }
 
     public execute() {
         this.initWorld();
@@ -163,7 +139,7 @@ export default class Renderer {
         canv.height = this.height;
         document.body.appendChild(canv);
         this.ctx = canv.getContext("2d");
-        this.renderWithWorkers();
+        //this.renderWithWorkers();
         setInterval(() => this.renderImage(this.ctx), 2000);
     }
 }

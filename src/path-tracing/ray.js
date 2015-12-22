@@ -1,3 +1,4 @@
+"use strict";
 var vector_1 = require('../general/vector');
 class Ray {
     constructor(origin = new vector_1.default(), direction = new vector_1.default()) {

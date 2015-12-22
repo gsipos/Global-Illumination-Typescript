@@ -1,3 +1,4 @@
+"use strict";
 var vector_1 = require('../../general/vector');
 var color_1 = require('../../general/color');
 var ray_1 = require('../ray');

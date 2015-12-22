@@ -1,3 +1,4 @@
+"use strict";
 var vector_1 = require('../../general/vector');
 var constant_1 = require('../constant');
 var SceneObj = require('./scene-object');
