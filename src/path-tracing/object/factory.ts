@@ -11,6 +11,7 @@ import * as SceneObj from './scene-object';
 import Plane from './plane';
 import Sphere from './sphere';
 import BoundingBox from './bounding-box';
+//import Mesh from './mesh';
 
 export enum Directions {
     UP,

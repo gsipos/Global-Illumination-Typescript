@@ -7,7 +7,7 @@ export default class IdealReflectorMaterial {
     public Kr: Color = new Color();
 
     public nextDirection(L: Vector, N: Vector, V: Vector): GeneralMaterial.BRDFSample {
-        var tmp: Vector = Vector.minus(
+        const tmp: Vector = Vector.minus(
             Vector.times(Vector.dot(N, V) * 2, N),
             V
         );

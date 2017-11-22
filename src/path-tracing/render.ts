@@ -1,4 +1,3 @@
-"use strict";
 import Vector from '../general/vector';
 import Color from '../general/color';
 
@@ -11,6 +10,8 @@ import * as SceneData from './scene/scene';
 import * as ObjectFactory from './object/factory';
 import Factory from './object/factory';
 import Directions = ObjectFactory.Directions;
+
+//import Mesh from './object/mesh';
 
 export default class Renderer {
     public width = 800;
@@ -90,6 +91,13 @@ export default class Renderer {
             }
         }
         scene.world.push(sphereBox);
+
+/*         var dragonMesh = new Mesh();
+        dragonMesh.scale = new Vector(20, 20, 20);
+        dragonMesh.position = new Vector(150, 150, 150);
+        dragonMesh.mat = factory.createMatGreyDiffuse();
+        dragonMesh.loadFromObj('./assets/dragon.obj');
+        dragonMesh.triangles.forEach( t => scene.world.push(t)); */
     }
 
     public renderImage(ctx: CanvasRenderingContext2D) {
@@ -123,9 +131,9 @@ export default class Renderer {
         this.scene.renderFromTo(from, to);
         return this.scene.getPartialRawData(from, to);
     }
-    
+
     public getJob() { return this.scene.getRowsToRender(); }
-    
+
     public jobCompleted(jobResult: MessageEvent) {
         var data: SceneData.PartialRawData = jobResult.data;
         this.scene.addPartialRawData(data);

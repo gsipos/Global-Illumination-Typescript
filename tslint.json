@@ -15,9 +15,7 @@
     "label-position": true,
     "label-undefined": true,
     "max-line-length": [false, 140],
-    "member-ordering": [true,
-      "static-before-instance"
-    ],
+    "member-ordering": false,
     "no-arg": true,
     "no-bitwise": true,
     "no-construct": true,
@@ -51,6 +49,7 @@
       "variableDeclarator"
     ],
     "use-strict": true,
-    "variable-name": false
+    "variable-name": false,
+
   }
 }

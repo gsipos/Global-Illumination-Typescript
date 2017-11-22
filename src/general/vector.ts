@@ -1,9 +1,14 @@
 "use strict";
 export default class Vector {
 
-    constructor(public x: number = 0, public y: number = 0, public z: number = 0) { }
+    constructor(
+        public x: number = 0,
+        public y: number = 0,
+        public z: number = 0
+    ) { }
 
     static times(k: number, v: Vector) { return new Vector(k * v.x, k * v.y, k * v.z); }
+    static scale(v: Vector, s: Vector) { return new Vector(v.x * s.x, v.y * s.y, v.z * s.z); }
     static minus(v1: Vector, v2: Vector) { return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
     static plus(v1: Vector, v2: Vector) { return new Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
     static dot(v1: Vector, v2: Vector) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; }
@@ -23,9 +28,7 @@ export default class Vector {
     }
 
     public assign(v: Vector) {
-        this.x = v.x;
-        this.y = v.y,
-            this.z = v.z;
+        return Object.assign(this, v);
     }
 
     public normalize(): Vector {
@@ -36,6 +39,9 @@ export default class Vector {
         this.y *= div;
         return this;
     }
+    
+    public add(v: Vector): Vector{ return this.assign(Vector.plus(this,v)); }
+    public scale(s: Vector) { return this.assign(Vector.scale(this, s)); }
 
     static ZUNIT = new Vector(0, 0, 1);
     static YUNIT = new Vector(0, 1, 0);

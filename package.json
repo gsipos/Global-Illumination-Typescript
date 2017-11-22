@@ -16,5 +16,12 @@
     "url": "https://github.com/gsipos/Global-Illumination-Typescript/issues"
   },
   "homepage": "https://github.com/gsipos/Global-Illumination-Typescript#readme",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "tslint": "^5.7.0"
+  },
+  "dependencies": {
+    "@types/node": "^8.0.31",
+    "typescript": "^2.5.3"
+  }
 }

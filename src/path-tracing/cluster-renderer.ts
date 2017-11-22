@@ -1,4 +1,3 @@
-"use strict";
 import * as cluster from 'cluster';
 import * as os from 'os';
 
@@ -25,13 +24,13 @@ export default class ClusterRenderer {
             }
 
             cluster.on('exit', (worker, code, signal) => console.log('worker ' + worker.process.pid + ' died'));
-            
+
         } else if (cluster.isWorker) {
             process.on('message', msg => this.getJobDone(msg));
         }
 
     }
-    
+
     private giveJobToWorkerOrClose(worker: cluster.Worker) {
         var job = this.renderer.getJob();
         if (job.renderRows) {
@@ -40,10 +39,10 @@ export default class ClusterRenderer {
             worker.disconnect();
         }
     }
-    
+
     private getJobDone(msg: any) {
-        var result = this.renderer.renderPart(msg.data.from, msg.data.to);
-        console.log('Worker ' + process.pid + ' rendered: ' + msg.data.from + 'to ' + msg.data.to);
+        var result = this.renderer.renderPart(msg.from, msg.to);
+        console.log('Worker ' + process.pid + ' rendered: ' + msg.from + 'to ' + msg.to);
         process.send(result);
     }
 }
